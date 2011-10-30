@@ -26,7 +26,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import search.Ratings;
+import lexicon.Ratings;
 
 
 /**
@@ -35,15 +35,16 @@ import search.Ratings;
  * 
  * @author Stelios Karabasakis
  */
-@SuppressWarnings("serial")
 public class ReviewStats implements Serializable {
 	
-	private Integer						currentReviewId;
-	private Integer						currentReviewRating;
+	private static final long						serialVersionUID	= 7361056987594437171L;
+
+	private Integer									currentReviewId;
+	private Integer									currentReviewRating;
 	private Counter									currentReviewCounter;
 	
 	// Maps review id's to their corresponding lengths, grouped by rating
-	private ArrayList<HashMap<Integer, Counter>>	reviewLengths;
+	private ArrayList<HashMap<Integer, Integer>>	reviewLengths;
 	
 	/**
 	 * Constructor for class ReviewStats
@@ -52,12 +53,24 @@ public class ReviewStats implements Serializable {
 	{
 		currentReviewCounter = new Counter();
 
-		reviewLengths = new ArrayList<HashMap<Integer, Counter>>(Ratings.capacity());
+		reviewLengths = new ArrayList<HashMap<Integer, Integer>>(Ratings.capacity());
 		for (int pos = 0 ; pos < Ratings.capacity() ; pos++) {
-			reviewLengths.add(new HashMap<Integer, Counter>());
+			reviewLengths.add(new HashMap<Integer, Integer>());
 		}
 	}
 	
+	/**
+	 * Import review information into the {@link ReviewStats} object. The information remains staged
+	 * until {@link setCurrent} is called again, at which point it is overwritten. In order to
+	 * permanently store the review information into the object, follow-up with a call to
+	 * {@link storeCurrent}
+	 * 
+	 * @param reviewId
+	 *            The id number of the review to import
+	 * @param rating
+	 *            The rating of the review to import
+	 * @return A reference to counter object to count review length with.
+	 */
 	public Counter setCurrent(int reviewId, int rating)
 	{
 		currentReviewId = reviewId;
@@ -67,7 +80,9 @@ public class ReviewStats implements Serializable {
 	}
 	
 	/**
-	 * @return the currentReviewCounter
+	 * Get a counter
+	 * 
+	 * @return A counter object to count review length with
 	 */
 	public Counter getCurrent()
 	{
@@ -77,7 +92,7 @@ public class ReviewStats implements Serializable {
 	public boolean storeCurrent()
 	{
 		if (currentReviewId != 0) {
-			reviewLengths.get(currentReviewRating).put(currentReviewId, currentReviewCounter);
+			reviewLengths.get(currentReviewRating).put(currentReviewId, currentReviewCounter.get());
 			resetCurrent();
 			return true;
 		}
@@ -92,12 +107,32 @@ public class ReviewStats implements Serializable {
 		currentReviewCounter.reset();
 	}
 	
+	/**
+	 * @param rating
+	 * @return
+	 */
+	public int getTotalReviews(int rating)
+	{
+		return reviewLengths.get(rating).keySet().size();
+	}
+
+	public int getTotalReviews()
+	{
+		int total_reviews = 0;
+		
+		for (int rating = Ratings.MIN_RATING ; rating <= Ratings.MAX_RATING ; rating++) {
+			total_reviews += getTotalReviews(rating);
+		}
+		
+		return total_reviews;
+	}
+
 	public int getTotalLength(int rating) {
 		int total_length = 0;
 
-		Iterator<Counter> i = reviewLengths.get(rating).values().iterator();
+		Iterator<Integer> i = reviewLengths.get(rating).values().iterator();
 		while ( i.hasNext() ) {
-			total_length += i.next().get().intValue();
+			total_length += i.next();
 		}
 		
 		return total_length;
@@ -105,13 +140,9 @@ public class ReviewStats implements Serializable {
 	
 	public int getTotalLength() {
 		int total_length = 0;
-		Iterator<Counter> i = null;
 
 		for (int rating = Ratings.MIN_RATING ; rating <= Ratings.MAX_RATING ; rating++) {
-			i = reviewLengths.get(rating).values().iterator();
-			while ( i.hasNext() ) {
-				total_length += i.next().get().intValue();
-			}
+			total_length += getTotalLength(rating);
 		}
 		
 		return total_length;
@@ -121,9 +152,21 @@ public class ReviewStats implements Serializable {
 	{
 		int total_length = getTotalLength();
 		ArrayList<Float> rating_weights = new ArrayList<Float>(Ratings.N_RATINGS);
+		Float min_weight = Float.MAX_VALUE;
 		for (int rating = Ratings.MIN_RATING ; rating <= Ratings.MAX_RATING ; rating++) {
-			rating_weights.add(total_length / (float)getTotalLength(rating));
+			Float current_weight = total_length / (float)getTotalLength(rating);
+			rating_weights.add(current_weight);
+			min_weight = Math.min(min_weight, current_weight);
 		}
-		return rating_weights;
+		
+
+		ArrayList<Float> rating_weights_normalized = new ArrayList<Float>(Ratings.N_RATINGS);
+		for (int rating = Ratings.MIN_RATING ; rating <= Ratings.MAX_RATING ; rating++) {
+			rating_weights_normalized.add(rating_weights.get(rating - 1) / min_weight);
+		}
+
+		return rating_weights_normalized;
 	}
+
+
 }

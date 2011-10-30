@@ -22,14 +22,21 @@
 //
 package classes;
 
+import java.sql.Clob;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.logging.Level;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.NumericField;
+import util.AppLogger;
+import util.DatabaseConnection;
 import config.Globals;
 
 
 /**
  * TODO Description missing
+ * 
  * @author Stelios Karabasakis
  */
 public class DatabaseReview extends Review {
@@ -47,9 +54,41 @@ public class DatabaseReview extends Review {
 	{
 		documentForIndexing = null;
 	}
+	
+	public DatabaseReview(int reviewid) throws SQLException
+	{
+		DatabaseConnection dc = new DatabaseConnection();
+		load(reviewid, dc);
+	}
+	
+	public DatabaseReview(int reviewid, DatabaseConnection dc) throws SQLException
+	{
+		load(reviewid, dc);
+	}
+	
+	private void load(Integer reviewid, DatabaseConnection dc) throws SQLException
+	{
+		dc.openQuery("SELECT * FROM reviews WHERE review = " + reviewid);
+		ResultSet result = dc.getResults();
+		if (result.first()) {
+			setReviewid(result.getInt("reviewid"));
+			setMovie(result.getString("imdbid"));
+			setTitle(result.getString("title"));
+			setRating(result.getInt("rating"));
+			
+			Clob text = result.getClob("text");
+			setReviewText(text.getSubString(1, (int)text.length()));
+		}
+		else {
+			AppLogger.error.log(Level.WARNING, "Review #" + reviewid + " not found in database");
+		}
+		
+		dc.closeQuery();
+	}
 
 	/**
-	 * @param reviewid the reviewid to set
+	 * @param reviewid
+	 *            the reviewid to set
 	 */
 	public void setReviewid(int reviewid)
 	{
@@ -88,11 +127,9 @@ public class DatabaseReview extends Review {
 		if (documentForIndexing == null) {
 			documentForIndexing = new Document();
 			documentForIndexing.add(new Field(Globals.IndexFieldNames.reviewid, Integer.toString(getReviewid()),
-					Field.Store.YES,
-					Field.Index.NO));
-			documentForIndexing.add(new Field(Globals.IndexFieldNames.text, getTitle() + " " + getReviewText(),
-					Field.Store.YES,
-					Field.Index.ANALYZED_NO_NORMS));
+					Field.Store.YES, Field.Index.NO));
+			documentForIndexing.add(new Field(Globals.IndexFieldNames.text, getTitle() + "\n" + getReviewText(),
+					Field.Store.NO, Field.Index.ANALYZED_NO_NORMS));
 			documentForIndexing.add(new NumericField(Globals.IndexFieldNames.rating, Field.Store.YES, false)
 				.setIntValue(getRating()));
 		}

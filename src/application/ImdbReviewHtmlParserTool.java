@@ -41,6 +41,7 @@ import util.DatabaseConnection;
 import classes.Movie;
 import classes.ParsedReview;
 import classes.ParsedReviewCollection;
+import config.Paths;
 
 
 /**
@@ -65,21 +66,19 @@ public class ImdbReviewHtmlParserTool {
 	};
 	
 	/** Cyberneko DOM Parser for parsing HTML documents with the DOM model */
-	private static DOMParser			domp					= new DOMParser();
+	private static DOMParser	domp					= new DOMParser();
 	
 	/** File system directory where downloaded review documents are located */
-	public static String				rootDirLocation			= "C:/Users/Skarab/Documents/Code/Java/AspectMiner/reviewdata";
+	public static String		rootDirLocation			= Paths.BIN_ROOT + "/reviewdata";
 	
 	/** Location of current HTML document to be parsed */
-	public static String				currentDocumentLocation	= "file:///C:/Users/Skarab/Documents/Code/Java/AspectMiner/reviewdata/001/tt0044231";
+	public static String		currentDocumentLocation	= "file:///C:/Users/Skarab/Documents/Code/Java/AspectMiner/reviewdata/001/tt0044231";
 	
 	public static void main(String[] args)
 	{
-		// Initializing variables
-		ParsedReviewCollection currentReviewDocument = null; // Stores all the information that is
-																// parsed
-														// from the HTML document at the current
-														// location
+		// Initializing a ReviewCollection that stores all the information parsed from the HTML
+		// document at the current location
+		ParsedReviewCollection currentReviewDocument = null;
 		
 		// Connecting to the database
 		DatabaseConnection c;
@@ -130,27 +129,29 @@ public class ImdbReviewHtmlParserTool {
 				// Read contents of subdirectory
 				String[] currentDirContents = currentDir.list();
 				
-				// Count review documents in directory, i.e. files with names in the form "ttXXXXXXX".
+				// Count review documents in directory, i.e. files with names in the form
+				// "ttXXXXXXX".
 				// Display the result
 				int document_counter = 0;
-				for (int f=0; f<currentDirContents.length; f++) {
+				for (int f = 0 ; f < currentDirContents.length ; f++) {
 					// Only process files with names in the form "ttXXXXXXX"
-					if ( currentDirContents[f].startsWith("tt") && currentDirContents[f].length() == 9 ) {
+					if (currentDirContents[f].startsWith("tt") && currentDirContents[f].length() == 9) {
 						document_counter++;
 					}
 				}
-				System.out.println("Directory " + rootDirContents[i] +
-				               "\nProcessing " + document_counter + " review documents");
-						
+				System.out.println("Directory " + rootDirContents[i] + "\nProcessing " + document_counter
+					+ " review documents");
+
 				// Open review documents inside this directory one by one and send them to the
 				// parser.
-				for (int f=0; f<currentDirContents.length; f++) {
+				for (int f = 0 ; f < currentDirContents.length ; f++) {
 					// Only process files with names in the form "ttXXXXXXX"
-					if ( currentDirContents[f].startsWith("tt") && currentDirContents[f].length() == 9 ) {
+					if (currentDirContents[f].startsWith("tt") && currentDirContents[f].length() == 9) {
 						
 						// Open current review document
 						String imdbid = currentDirContents[f];
-						File currentDocument = new File(currentDocumentLocation = currentDir + "/" + currentDirContents[f]);
+						File currentDocument = new File(currentDocumentLocation = currentDir + "/"
+							+ currentDirContents[f]);
 						if (currentDocument.isFile()) {
 							try {
 								System.out.print(imdbid + ": ");
@@ -200,13 +201,12 @@ public class ImdbReviewHtmlParserTool {
 	 * @throws SAXException
 	 */
 	public static ParsedReviewCollection parseReviewDocument(String imdbid, String documentLocation)
-			throws SAXException,
-			IOException
+			throws SAXException, IOException
 	{
 		// Initializing data collection to store the parsing results
 		ParsedReviewCollection currentDocument = new ParsedReviewCollection(new Movie(imdbid));
 		ParsedReview currentReview = null; // Stores all content and metadata of the review that is
-										// currently being parsed
+		// currently being parsed
 		
 		// Parsing the document at the current location
 		domp.parse(documentLocation);
@@ -216,10 +216,9 @@ public class ImdbReviewHtmlParserTool {
 		// We will be using this later for verification purposes
 		Node number_of_reviews_node = content.getChildNodes().item(9).getFirstChild().getFirstChild().getChildNodes()
 			.item(1).getFirstChild();
-		if (number_of_reviews_node != null
-				&& number_of_reviews_node.getNodeType() == Node.TEXT_NODE) {
-			currentDocument.setCount(Integer.parseInt(number_of_reviews_node.getNodeValue().split(" ")[0]
-			                                                                                           .substring(1)));
+		if (number_of_reviews_node != null && number_of_reviews_node.getNodeType() == Node.TEXT_NODE) {
+			currentDocument
+				.setCount(Integer.parseInt(number_of_reviews_node.getNodeValue().split(" ")[0].substring(1)));
 		}
 		
 		// Initializing the loop that parses the document reviews one-by-one
@@ -235,9 +234,9 @@ public class ImdbReviewHtmlParserTool {
 				
 				switch (stage) {
 					/*
-					 * Sample HTML to parse START ON_REVIEW_HEADERS: <p>......</p>
-					 * ON_REVIEW_CONTENT: <p><b>*** This review may contain spoilers ***</b></p>
-					 * <p></p> <p>....</p> ON_FEEDBACK_FORM: <div class="yn"
+					 * Sample HTML to parse START ON_REVIEW_HEADERS: <p> ...... </p>
+					 * ON_REVIEW_CONTENT: <p> <b>*** This review may contain spoilers ***</b> </p>
+					 * <p> </p> <p> .... </p> ON_FEEDBACK_FORM: <div class="yn"
 					 * id="ynd_2026394">........</div> <script type="text/javascript">.....</script>
 					 * <div ... id="sponsored_links_afc_div_MIDDLE_CENTER"></div> <iframe ...
 					 * id="sponsored_links_afc_iframe_MIDDLE_CENTER"></iframe> END_OF_REVIEW: <hr
@@ -253,10 +252,9 @@ public class ImdbReviewHtmlParserTool {
 							stage = DocumentParsingStage.START_OF_REVIEW;
 						}
 						break;
-						
+
 					case START_OF_REVIEW:
-						if (n.getNodeName().equals("HR")
-								&& n.getAttributes().getLength() == 2) {
+						if (n.getNodeName().equals("HR") && n.getAttributes().getLength() == 2) {
 							stage = DocumentParsingStage.END_OF_DOCUMENT;
 							break;
 						}
@@ -269,7 +267,7 @@ public class ImdbReviewHtmlParserTool {
 							stage = DocumentParsingStage.ON_REVIEW_HEADERS;
 						}
 						
-						
+
 					case ON_REVIEW_HEADERS:
 						// Next parsing stage is ON_SPOILER_TAG.
 						stage = DocumentParsingStage.ON_SPOILER_TAG;
@@ -290,8 +288,7 @@ public class ImdbReviewHtmlParserTool {
 							HeadersParsingStage hstage = HeadersParsingStage.START_OF_HEADERS;
 							
 							// Looping over and parsing Review Headers
-							while ( hstage != HeadersParsingStage.END_OF_HEADERS
-									&& (hn = hn.getNextSibling()) != null ) {
+							while ( hstage != HeadersParsingStage.END_OF_HEADERS && (hn = hn.getNextSibling()) != null ) {
 								
 								// Process HTML elements only, ignore everything else: #text
 								// nodes, comments etc.
@@ -317,8 +314,7 @@ public class ImdbReviewHtmlParserTool {
 												// parsing stage
 												if (hn.getNodeName().equals("SMALL")) {
 													// Process USER_VOTES element.
-													String[] uservotes = hn.getFirstChild().getNodeValue()
-													.split(" ");
+													String[] uservotes = hn.getFirstChild().getNodeValue().split(" ");
 													currentReview.setVotesUseful(Integer.parseInt(uservotes[0]));
 													currentReview.setVotesTotal(Integer.parseInt(uservotes[3]));
 													
@@ -362,14 +358,14 @@ public class ImdbReviewHtmlParserTool {
 													// Process and parse publication date of
 													// review
 													try {
-														DateFormat dateparser = new SimpleDateFormat(
-														                                             "d MMMMM yyyy", new Locale("en"));
+														DateFormat dateparser = new SimpleDateFormat("d MMMMM yyyy",
+																new Locale("en"));
 														Date publicationDate = dateparser.parse(hn.getFirstChild()
-														                                        .getNodeValue());
+															.getNodeValue());
 														currentReview.setPublicationDate(publicationDate);
 													} catch ( ParseException e ) {
 														System.err.println("WARNING: Unable to parse date: "
-														                   + e.getMessage());
+															+ e.getMessage());
 														currentReview.setPublicationDate(new Date(0));
 													}
 													
@@ -388,7 +384,7 @@ public class ImdbReviewHtmlParserTool {
 												if (hn.getNodeName().equals("IMG")) {
 													// Process RATING element
 													String ratingURI = hn.getAttributes().getNamedItem("src")
-													.getNodeValue();
+														.getNodeValue();
 													currentReview.setRating(Integer.parseInt(ratingURI
 														.substring(ratingURI.lastIndexOf('/') + 1, ratingURI
 															.lastIndexOf('0'))));
@@ -402,7 +398,7 @@ public class ImdbReviewHtmlParserTool {
 												if (hn.getNodeName().equals("A")) {
 													// Process AUTHOR element
 													String authorURI = hn.getAttributes().getNamedItem("href")
-													.getNodeValue();
+														.getNodeValue();
 													currentReview.setAuthorId(authorURI.split("/")[2]);
 													
 													// Next parsing stage is END_OF_HEADERS. If
@@ -412,7 +408,7 @@ public class ImdbReviewHtmlParserTool {
 													hstage = HeadersParsingStage.END_OF_HEADERS;
 												}
 												break;
-												
+
 											default:
 												// Execution flow should never reach this default
 												// case
@@ -429,7 +425,7 @@ public class ImdbReviewHtmlParserTool {
 						}
 						
 					case ON_SPOILER_TAG:
-						
+
 						// Next parsing stage is ON_REVIEW_CONTENT. If a SPOILER_TAG is not
 						// encountered
 						// at this parsing stage, don't break. Move on to next stage
@@ -437,15 +433,15 @@ public class ImdbReviewHtmlParserTool {
 						stage = DocumentParsingStage.ON_REVIEW_CONTENT;
 						
 						if (n.getNodeName().equals("P") && n.getFirstChild() != null
-								&& n.getFirstChild().getNodeName().equals("B")
-								&& n.getFirstChild().getFirstChild().getNodeValue().endsWith("spoilers ***")) {
+							&& n.getFirstChild().getNodeName().equals("B")
+							&& n.getFirstChild().getFirstChild().getNodeValue().endsWith("spoilers ***")) {
 							// Process spoiler tag
 							currentReview.setSpoilers(true);
 							break;
 						}
 						
 					case ON_REVIEW_CONTENT:
-						
+
 						// Next parsing stage is ON_REVIEW_FOOTER.
 						stage = DocumentParsingStage.ON_REVIEW_FOOTER;
 						
@@ -471,30 +467,27 @@ public class ImdbReviewHtmlParserTool {
 							break;
 						}
 						else {
-							System.err
-							.println("ERROR: REVIEW_CONTENT is missing, or does not match expected format.");
+							System.err.println("ERROR: REVIEW_CONTENT is missing, or does not match expected format.");
 						}
 						
 					case ON_REVIEW_FOOTER:
 						if (n.getNodeName().equals("DIV")
-								&& n.getAttributes().getNamedItem("class").getNodeValue().equals("yn")) {
+							&& n.getAttributes().getNamedItem("class").getNodeValue().equals("yn")) {
 							// Bypass feedback form
 							stage = DocumentParsingStage.END_OF_REVIEW;
 						}
 						else {
-							System.err
-							.println("ERROR: REVIEW_FOOTER is missing, or does not match expected format.");
+							System.err.println("ERROR: REVIEW_FOOTER is missing, or does not match expected format.");
 						}
 						break;
-						
+
 					case END_OF_REVIEW:
-						if (n.getNodeName().equals("HR")
-								&& n.getAttributes().getLength() > 2) {
+						if (n.getNodeName().equals("HR") && n.getAttributes().getLength() > 2) {
 							currentDocument.insertReview(currentReview);
 							stage = DocumentParsingStage.START_OF_REVIEW;
 						}
 						break;
-						
+
 					default:
 						break;
 				}

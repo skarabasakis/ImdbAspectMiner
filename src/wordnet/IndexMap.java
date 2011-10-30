@@ -22,6 +22,7 @@
 //
 package wordnet;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -30,8 +31,10 @@ import java.util.HashMap;
  * TODO Description missing
  * @author Stelios Karabasakis
  */
-public class IndexMap {
+public class IndexMap implements Serializable {
 	
+	private static final long			serialVersionUID	= 4491762253642324190L;
+
 	private HashMap<String, IndexMap>	map	= null;
 	
 	public boolean has(String key)
@@ -44,6 +47,19 @@ public class IndexMap {
 		return map.get(key);
 	}
 	
+	public IndexMap get(String[] keys)
+	{
+		IndexMap current_map = this;
+		for (String key : keys) {
+			current_map = current_map.get(key);
+			if (current_map == null) {
+				break;
+			}
+		}
+
+		return current_map;
+	}
+
 	public IndexMap put(String key)
 	{
 		return map.put(key, new IndexMap());

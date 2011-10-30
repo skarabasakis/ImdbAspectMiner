@@ -174,8 +174,10 @@ public class ReviewTermPayload implements Serializable {
 	 */
 	public void setProper(boolean proper)
 	{
-		posCat = PosCategory.N;
 		this.proper = proper;
+		if (proper == true) {
+			posCat = PosCategory.N;
+		}
 	}
 	
 	/**
@@ -231,8 +233,28 @@ public class ReviewTermPayload implements Serializable {
 	@Override
 	public String toString()
 	{
-		return (negation ? "!" : "_") + (unlemmatizable ? "U" : "_") + (proper ? "N" : "_") + degree.ordinal()
+		return (negation ? "!" : " ") + (unlemmatizable ? "?" : " ") + (proper ? "N" : " ") + degreeString() + " "
 			+ PosTag.getTypeString(posCat);
+	}
+	
+	private String degreeString() {
+		switch (degree) {
+			case NONE:
+				return " ";
+			case POSITIVE:
+				return "_";
+			case COMPARATIVE:
+				return "C";
+			case SUPERLATIVE:
+				return "S";
+			default:
+				return " ";
+		}
+	}
+	
+	public boolean isPlain()
+	{
+		return negation == false && (degree == ComparisonDegree.NONE || degree == ComparisonDegree.POSITIVE);
 	}
 
 	private void randomize()

@@ -73,8 +73,7 @@ public class Lemma {
 
 	public void appendToLemma(Lemma lemma)
 	{
-		this.lemma.append(lemma.getLemma());
-		length += lemma.getLength();
+		this.appendToLemma(lemma.getLemma(), lemma.getLength());
 	}
 
 	public void appendToLemma(String word)
@@ -130,6 +129,10 @@ public class Lemma {
 		return length;
 	}
 
+	public boolean hasPos()
+	{
+		return pos != null;
+	}
 	
 	/**
 	 * @return the pos
@@ -200,7 +203,19 @@ public class Lemma {
 	@Override
 	public String toString()
 	{
-		return getLemma() + "(" + getLength() + ")" + "::" + PosTag.getTypeString(getPos());
+		return "[" + lemma + "(" + length + ")" + (wasFound() ? " - " + getSynset().toString() : "") + "]";
+	}
+
+
+	public int getWordLength()
+	{
+		return getLemma().length();
+	}
+	
+
+	public void overrideLength(int length)
+	{
+		this.length = length;
 	}
 
 }

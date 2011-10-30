@@ -22,14 +22,6 @@
 //
 package indexing;
 
-import indexing.filters.ComparisonDegreeFilter;
-import indexing.filters.IndexableFilter;
-import indexing.filters.LemmatizationFilter;
-import indexing.filters.NamedEntityFilter;
-import indexing.filters.NegationFilter;
-import indexing.filters.PosTaggingFilter;
-import indexing.filters.SentenceCollectorFilter;
-import indexing.filters.StatsFilter;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
@@ -46,6 +38,16 @@ import org.apache.lucene.analysis.tokenattributes.TypeAttribute;
 import wordnet.DictionaryFactory;
 import wordnet.IndexMap;
 import application.ReviewDocumentIndexer;
+import filters.ComparisonDegreeFilter;
+import filters.LemmatizationFilter;
+import filters.NamedEntityFilter;
+import filters.PosTaggingFilter;
+import filters.StopLemmaFilter;
+import filters._TokenLogFilter;
+import filters.indexing.IndexableFilter;
+import filters.indexing.NegationScopeFilter;
+import filters.indexing.StatsFilter;
+import filters.indexing.TopicModelInputFilter;
 
 
 /**
@@ -70,8 +72,7 @@ public final class ReviewTextAnalyzer extends Analyzer {
 		this.indexer = indexer;
 		
 		wordnet = DictionaryFactory.getWordnetInstance();
-		compundWordnetIndex = LemmatizationFilter.setupCompoundTermsIndex(wordnet);
-		
+		compundWordnetIndex = DictionaryFactory.setupCompoundTermsIndex(wordnet);
 	}
 	
 	/*
@@ -85,14 +86,17 @@ public final class ReviewTextAnalyzer extends Analyzer {
 		
 		TokenFilter tokf_1 = new PosTaggingFilter(source_document);
 		TokenFilter tokf_2 = new NamedEntityFilter(tokf_1);
-		TokenFilter tokf_3 = new LemmatizationFilter(tokf_2, wordnet, compundWordnetIndex);
-		TokenFilter tokf_4 = new ComparisonDegreeFilter(tokf_3);
-		TokenFilter tokf_5 = new NegationFilter(tokf_4);
-		TokenFilter tokf_6 = new IndexableFilter(tokf_5);
-		TokenFilter tokf_7 = new SentenceCollectorFilter(tokf_6, indexer.theSentences, indexer.theReviewId);
-		TokenFilter tokf_8 = new StatsFilter(tokf_7, indexer);
-		
-		return tokf_2;
+		TokenFilter tokf_3 = new LemmatizationFilter(tokf_2, true, wordnet, compundWordnetIndex);
+		TokenFilter tokf_4 = new StopLemmaFilter(tokf_3, true);
+		TokenFilter tokf_5 = new ComparisonDegreeFilter(tokf_4);
+		TokenFilter tokf_6 = new NegationScopeFilter(tokf_5);
+		TokenFilter tokf_7 = new TopicModelInputFilter(tokf_6, indexer.theTokenLists, indexer.theReviewId);
+		TokenFilter tokf_8 = new IndexableFilter(tokf_7, true);
+		TokenFilter tokf_9 = new StatsFilter(tokf_8, indexer);
+
+		TokenFilter tokf_p = new _TokenLogFilter(tokf_9);
+
+		return tokf_3;
 	}
 	
 	@Override
@@ -122,12 +126,16 @@ public final class ReviewTextAnalyzer extends Analyzer {
 		String[] filenames = { "review.txt" };
 		for (String filename : filenames) {
 			try {
-				TokenStream tokstr = r.tokenStream(null, new FileReader(filename));
+				TokenStream tokstr = r.reusableTokenStream(null, new FileReader(filename));
 								
 				TermAttribute output_term = tokstr.addAttribute(TermAttribute.class);
 				TypeAttribute output_type = tokstr.addAttribute(TypeAttribute.class);
 				FlagsAttribute output_flags = tokstr.addAttribute(FlagsAttribute.class);
 				PayloadAttribute output_payload = tokstr.addAttribute(PayloadAttribute.class);
+				
+				int review_id = r.indexer.theReviewId.get() + 1;
+				r.indexer.theReviewId.set(review_id);
+				r.indexer.theStats.setCurrent(review_id, 10);
 				
 				while ( tokstr.incrementToken() ) {
 					
@@ -139,10 +147,11 @@ public final class ReviewTextAnalyzer extends Analyzer {
 					if (current_token.isDelim(false)) {
 						System.out.println();
 					}
-					else if (current_token.isDelim(true)) {
-						System.out.println("..................................................................");
+					if (current_token.isDelim(true)) {
+						System.out.println("..................................................................\n");
 					}
 				}
+
 				System.out.println();
 				
 
@@ -150,7 +159,14 @@ public final class ReviewTextAnalyzer extends Analyzer {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+			
+			System.out
+				.println("\n\n\n\n\n\n\n\n==================================================================\n\n\n\n\n\n\n\n");
 		}
+		
+		return;
 	}
 	
+	
+
 }

@@ -34,8 +34,9 @@ import util.DatabaseConnection;
  */
 public class DatabaseReviewCollection extends ReviewCollection {
 	
+
 	private DatabaseConnection	conn				= null;
-	private int					maxSegmentSize		= 0;
+	private int					maxSegmentSize		= 10000;
 	private int					segmentOffset		= 0;
 	private int					min_reviewid		= 0;
 	private int					max_reviewid		= 0;
@@ -62,7 +63,7 @@ public class DatabaseReviewCollection extends ReviewCollection {
 	{
 		this.min_reviewid = min_reviewid;
 		this.max_reviewid = max_reviewid;
-		has_next_segment = max_reviewid > min_reviewid;
+		has_next_segment = max_reviewid == 0 ? true : max_reviewid > min_reviewid;
 	}
 
 	public void loadNextSegment() throws SQLException
@@ -78,9 +79,8 @@ public class DatabaseReviewCollection extends ReviewCollection {
 			r.setTitle(results.getString("title"));
 			r.setRating(results.getInt("rating"));
 			
-			// TODO This needs to be tested
 			Clob text = results.getClob("text");
-			r.setReviewText(text.toString());
+			r.setReviewText(text.getSubString(1, (int)text.length()));
 			
 			// Insert current review into collection
 			insertReview(r);
@@ -91,16 +91,24 @@ public class DatabaseReviewCollection extends ReviewCollection {
 		conn.closeQuery();
 	}
 	
+	public void loadAll() throws SQLException
+	{
+		while ( has_next_segment ) {
+			loadNextSegment();
+		}
+	}
+
 	/**
 	 * @return
 	 */
 	private String formReviewsQuery()
 	{
 		return "SELECT * FROM `" + table //
-			+ "` WHERE `rating` > 0 " //
-			+ (min_reviewid == 0 ? "" : "AND `reviewid` > " + min_reviewid) //
-			+ (max_reviewid == 0 ? "" : "AND `reviewid` <= " + max_reviewid) //
-			+ (segmentOffset == 0 ? "" : "LIMIT " + maxSegmentSize + " OFFSET " + segmentOffset * maxSegmentSize);
+			+ "` WHERE `enabled` = 1" /* + " AND `rating` > 0" *///
+			+ (min_reviewid == 0 ? "" : " AND `reviewid` > " + min_reviewid) //
+			+ (max_reviewid == 0 ? "" : " AND `reviewid` <= " + max_reviewid) //
+			+ (maxSegmentSize == 0 ? "" : " LIMIT " + maxSegmentSize) //
+			+ (segmentOffset == 0 ? "" : " OFFSET " + segmentOffset * maxSegmentSize);
 	}
 
 	public boolean hasNextSegment()

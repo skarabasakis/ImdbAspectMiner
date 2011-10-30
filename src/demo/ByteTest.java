@@ -22,6 +22,9 @@
 //
 package demo;
 
+import java.text.NumberFormat;
+import java.util.Locale;
+
 
 /**
  * TODO Description missing
@@ -34,9 +37,16 @@ public class ByteTest {
 	 */
 	public static void main(String[] args)
 	{
-		Byte b = new Byte((byte)(5 + (1 << 4) + ((byte)1 << 6) + ((byte)1 << 7)));
+		// Byte b = new Byte((byte)(5 + (1 << 4) + ((byte)1 << 6) + ((byte)1 << 7)));
 		
-		System.out.printf("%x", b.byteValue());
+		float f = 0.2569587F;
+		
+		NumberFormat nf = NumberFormat.getPercentInstance(Locale.US);
+		nf.setMaximumIntegerDigits(3);
+		nf.setMaximumFractionDigits(1);
+		nf.format(f);
+		
+		System.out.println(nf.format(f));
 	}
 	
 }

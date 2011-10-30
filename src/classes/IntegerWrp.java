@@ -23,6 +23,7 @@
 package classes;
 
 import java.io.Serializable;
+import java.text.NumberFormat;
 
 
 /**
@@ -32,7 +33,8 @@ import java.io.Serializable;
 @SuppressWarnings("serial")
 public class IntegerWrp implements Serializable {
 	
-	protected Integer	value;
+	protected static final NumberFormat	nf	= NumberFormat.getIntegerInstance();
+	protected Integer					value;
 	
 	
 	/**
@@ -63,6 +65,13 @@ public class IntegerWrp implements Serializable {
 		value = 0;
 	}
 	
+	public String getValueString(int num_digits)
+	{
+		nf.setMinimumIntegerDigits(num_digits);
+		nf.setGroupingUsed(false);
+		return nf.format(value);
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * @see java.lang.Object#toString()

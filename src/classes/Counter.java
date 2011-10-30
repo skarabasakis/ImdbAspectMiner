@@ -23,6 +23,7 @@
 package classes;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 
 
 /**
@@ -30,8 +31,12 @@ import java.io.Serializable;
  * 
  * @author Stelios Karabasakis
  */
-@SuppressWarnings("serial")
 public class Counter extends IntegerWrp implements Serializable {
+	
+	/**
+	 * 
+	 */
+	private static final long	serialVersionUID	= -6316195657074239798L;
 	
 	/**
 	 * Constructor for class Counter. New Counter has a value of zero;
@@ -49,4 +54,13 @@ public class Counter extends IntegerWrp implements Serializable {
 		value++;
 	}
 	
+	public static ArrayList<Integer> toIntegerArray(ArrayList<Counter> counters) {
+		int size = counters.size();
+		ArrayList<Integer> integers = new ArrayList<Integer>(size);
+		for (int i = 0 ; i < size ; i++) {
+			integers.add(i, counters.get(i).get());
+		}
+		return integers;
+	}
+
 }

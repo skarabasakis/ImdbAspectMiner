@@ -49,7 +49,7 @@ public class ReviewId implements Serializable {
 	
 	public void set(int id)
 	{
-		this.value = id;
+		value = id;
 	}
 	
 	/*
@@ -66,4 +66,13 @@ public class ReviewId implements Serializable {
 	 * @return
 	 */
 
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj)
+	{
+		return value == ((ReviewId)obj).value;
+	}
 }

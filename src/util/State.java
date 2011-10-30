@@ -50,10 +50,15 @@ public class State<T> {
 	{
 		this.obj = obj;
 		this.obj_name = obj_name;
-		backup_state_file = new File(Paths.indexerState + "/" + obj_name + ".ser.bak");
-		state_file = new File(Paths.indexerState + "/" + obj_name + ".ser");
+		backup_state_file = new File(Paths.backupStateFiles + "/" + obj_name + ".ser.bak");
+		state_file = new File(Paths.stateFiles + "/" + obj_name + ".ser");
 	}
 	
+	public boolean exists()
+	{
+		return state_file.exists();
+	}
+
 	/**
 	 * @return the obj
 	 */
@@ -62,6 +67,14 @@ public class State<T> {
 		return obj;
 	}
 	
+	/**
+	 * @param obj
+	 */
+	public void setObj(T obj)
+	{
+		this.obj = obj;
+	}
+
 	private File backupAndRecreate()
 	{
 		if (state_file.exists()) {
@@ -86,10 +99,12 @@ public class State<T> {
 	{
 		try {
 			if (state_out == null) {
-				state_out = new ObjectOutputStream(new FileOutputStream(backupAndRecreate()));
+				state_out = new ObjectOutputStream(new FileOutputStream(backupAndRecreate(), false));
 			}
 			else {
 				state_out.reset();
+				state_out.close();
+				state_out = new ObjectOutputStream(new FileOutputStream(backupAndRecreate(), false));
 			}
 			
 			state_out.writeObject(obj);
@@ -106,8 +121,10 @@ public class State<T> {
 				state_in.close();
 			}
 			state_in = new ObjectInputStream(new FileInputStream(state_file));
+			T obj = (T)state_in.readUnshared();
+			state_in.close();
 			
-			return (T)state_in.readUnshared();
+			return obj;
 		} catch ( IOException e ) {
 			AppLogger.error.log(Level.SEVERE, "Cannot restore state file for " + this.obj_name);
 			throw e;
@@ -139,12 +156,12 @@ public class State<T> {
 				dest.createNewFile();
 				
 				FileInputStream stream_src = new FileInputStream(src);
-				FileOutputStream stream_dest = new FileOutputStream(dest);
+				FileOutputStream stream_dest = new FileOutputStream(dest, false);
 				
 				// Copy the bits from instream to outstream
 				byte[] buf = new byte[512 * 1024];
 				int len;
-				while ( (len = stream_src.read(buf)) > 0 ) {
+				while ( (len = stream_src.read(buf)) > -1 ) {
 					stream_dest.write(buf, 0, len);
 				}
 				stream_src.close();
@@ -158,4 +175,6 @@ public class State<T> {
 			}
 		}
 	}
+	
+
 }

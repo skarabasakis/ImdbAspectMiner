@@ -32,7 +32,7 @@ import java.util.Iterator;
  */
 public abstract class ReviewCollection {
 	
-	protected static String		table				= "reviews";
+	protected static String		table	= "reviews";
 	protected ArrayList<Review>	reviewList;
 
 

@@ -112,9 +112,9 @@ public class Token implements HasWord, HasTag, Serializable {
 	public Synset synset()
 	{
 		if (isLemmatized())
-			return new Synset(PosTag.toCategory(type), flags);
+			return new Synset(payload.getPosCat(), flags);
 		else
-			return new Synset(PosTag.toCategory(type));
+			return new Synset(payload.getPosCat());
 	}
 
 	public void concat(Token token)
@@ -123,15 +123,10 @@ public class Token implements HasWord, HasTag, Serializable {
 		setTag(token.tag());
 	}
 
-	
-	/**
-	 * @return the flags
-	 */
 	public boolean isProper()
 	{
 		return payload.isProper();
 	}
-
 
 	public boolean isOpenClass()
 	{
@@ -140,15 +135,7 @@ public class Token implements HasWord, HasTag, Serializable {
 
 	public boolean isIndexable()
 	{
-		return PosTag.isOpenClass(payload.getPosCat());
-	}
-	
-	public boolean isSignificant()
-	{
-		return PosTag.isOpenClass(payload.getPosCat())
-			&& !payload.isNegation()
-			&& !payload.isProper()
-			&& (payload.getDegree() == ComparisonDegree.COMPARATIVE || payload.getDegree() == ComparisonDegree.SUPERLATIVE);
+		return isOpenClass() && !payload.isProper();
 	}
 	
 	public boolean isLemmatized()
@@ -156,6 +143,11 @@ public class Token implements HasWord, HasTag, Serializable {
 		return !payload.isUnlemmatizable();
 	}
 	
+	public boolean isSynset()
+	{
+		return flags != 0;
+	}
+
 	public boolean isDelim(boolean sentence_delim) {
 		return sentence_delim ? PosTag.isSentenceDelim(PosTag.toCategory(type)) : PosTag.isDelim(PosTag
 			.toCategory(type));
@@ -178,8 +170,9 @@ public class Token implements HasWord, HasTag, Serializable {
 	@Override
 	public String toString()
 	{
-		return "[" + term + "::" + (payload == null ? "" : payload.toString() + " ") + type
-			+ (flags == 0 ? "" : " | " + synset().toString()) + "]";
+		return "[" + (payload == null ? "" : payload.toString() + " ")
+			+ (flags == 0 ? "\t\t\t" : synset().toString() + "\t")
+			+ term + "/" + type + "]\n";
 	}
 
 }

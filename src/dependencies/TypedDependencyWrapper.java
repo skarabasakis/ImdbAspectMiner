@@ -22,26 +22,29 @@
 //
 package dependencies;
 
+import java.util.ArrayList;
 import edu.stanford.nlp.trees.GrammaticalRelation;
 import edu.stanford.nlp.trees.TypedDependency;
 
 
 /**
  * TODO Description missing
+ * 
  * @author Stelios Karabasakis
  */
 public class TypedDependencyWrapper implements Comparable<TypedDependencyWrapper> {
 	
 	// private TypedDependency theDependency = null;
-	private static final int	BELOW	= -1;
-	private static final int	ABOVE	= 1;
-	private static final int	EQUALS	= 0;
+	private static final int	BEFORE		= -1;
+	private static final int	AFTER		= 1;
+	private static final int	EQUALS		= 0;
 	
 	private int					govIndex;
 	private String				govLabel;
 	private int					depIndex;
 	private String				depLabel;
 	private GrammaticalRelation	relation;
+	private ArrayList<Integer>	pathToRoot	= null;
 
 	/**
 	 * Constructor for class TypedDependencyWrapper
@@ -80,6 +83,25 @@ public class TypedDependencyWrapper implements Comparable<TypedDependencyWrapper
 		return relation;
 	}
 	
+	private int LCAChild(TypedDependencyWrapper other)
+	{
+		Integer thischild;
+		int index = 0;
+		try {
+			while ( (thischild = pathToRoot.get(index)) == other.pathToRoot.get(index) ) {
+				index++;
+			}
+		} catch ( IndexOutOfBoundsException e ) {
+			if (index == pathToRoot.size())
+				return govIndex;
+			else
+				return pathToRoot.get(index);
+		}
+		
+		return thischild;
+	}
+	
+
 	/*
 	 * (non-Javadoc)
 	 * @see java.lang.Comparable#compareTo(java.lang.Object)
@@ -88,26 +110,34 @@ public class TypedDependencyWrapper implements Comparable<TypedDependencyWrapper
 	public int compareTo(TypedDependencyWrapper other)
 	{
 		if (govIndex == other.govIndex) {
-			// Relations with common governor: leading dependent wins
+			// Relations with common governor: trailing dependent is evaluated first
 			if (depIndex > other.depIndex)
-				return BELOW;
+				return BEFORE;
 			else if (depIndex < other.depIndex)
-				return ABOVE;
+				return AFTER;
 		}
 		else {
-			// Consecutive (i.e. chained) relations: top relation wins
-			if (govIndex == other.depIndex)
-				return BELOW;
-			else if (depIndex == other.govIndex)
-				return ABOVE;
-				
-			// Disconnected relations (i.e. no common nodes): leading governor wins
-			else if (govIndex > other.govIndex)
-				return BELOW;
-			else if (govIndex < other.govIndex)
-				return ABOVE;
+			int thischild = LCAChild(other);
+			int otherchild = other.LCAChild(this);
+			
+			// Same-branch relations: bottom relation is evaluated first
+			if (thischild == otherchild) {
+				if (thischild == govIndex)
+					return AFTER;
+				else if (thischild == other.govIndex)
+					return BEFORE;
+			}
+			
+			// Foreign relations: relation on the rightmost branch is evaluated first
+			else {
+				if (thischild > otherchild)
+					return BEFORE;
+				else if (thischild < otherchild)
+					return AFTER;
+			}
 		}
 
+		System.out.println("Unhandled comparison case for " + this + "\t\tand " + other);
 		return EQUALS;
 	}
 	
@@ -119,5 +149,18 @@ public class TypedDependencyWrapper implements Comparable<TypedDependencyWrapper
 	public String toString()
 	{
 		return relation.getShortName() + "(" + govLabel + "-" + govIndex + ", " + depLabel + "-" + depIndex + ")";
+	}
+	
+	public ArrayList<Integer> getPathToRoot()
+	{
+		return pathToRoot;
+	}
+
+	/**
+	 * @param pathToRoot
+	 */
+	public void setPathToRoot(ArrayList<Integer> pathToRoot)
+	{
+		this.pathToRoot = pathToRoot;
 	}
 }

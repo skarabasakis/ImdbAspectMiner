@@ -22,11 +22,9 @@
 //
 package demo;
 
-import indexing.Token;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
-import config.Globals;
 import config.Paths;
 import edu.stanford.nlp.parser.lexparser.LexicalizedParser;
 import edu.stanford.nlp.trees.GrammaticalStructure;
@@ -44,18 +42,23 @@ class ParserDemo {
 		LexicalizedParser lp = new LexicalizedParser(Paths.depParserPath + "/englishPCFG.ser.gz");
 		lp.setOptionFlags(new String[]{ "-maxLength", "80", "-retainTmpSubcategories" });
 
-		String[] sent = { "This", "is", "an", "egerggbnnthnnbenhofen", "sentence" };
+		String sentstr = "Enjoy a movie that is the epitomy of sheer perfection";
+		String[] sent = sentstr.split(" ");
 		Tree parse = lp.apply(Arrays.asList(sent));
-		
-		Token[] sentence = { new Token("This", "DT", Globals.NO_FLAGS) };
+		//Token[] sentence = { new Token("The Film", "NN", Globals.NO_FLAGS),
+		//	new Token("is", "VBZ", Globals.NO_FLAGS),
+		//	new Token("great", "JJ", Globals.NO_FLAGS) };
+		//lp.parse(Arrays.asList(sentence));
+		System.out.println(lp.getBestParse());
 
 		// lp.parse("This is an easy sentence");
 		// parse.pennPrint();
 		
 		TreebankLanguagePack tlp = new PennTreebankLanguagePack();
 		GrammaticalStructureFactory gsf = tlp.grammaticalStructureFactory();
-		GrammaticalStructure gs = gsf.newGrammaticalStructure(parse);
+		GrammaticalStructure gs = gsf.newGrammaticalStructure(lp.getBestParse());
 		Collection<TypedDependency> tdl = gs.typedDependencies();
+		// tdl.iterator().next().gov().g
 		System.out.println(tdl);
 		System.out.println();
 
@@ -65,7 +68,7 @@ class ParserDemo {
 		while ( tds.hasNext() ) {
 			TypedDependency current_td = tds.next();
 			
-			System.out.println(current_td.reln().getParent().getParent().getParent().getLongName());
+			System.out.println(current_td.reln());
 		}
 
 		// TreePrint tp = new TreePrint("penn,typedDependenciesCollapsed");

@@ -42,7 +42,7 @@ public class CompoundLemmaTagger {
 	 */
 	public CompoundLemmaTagger()
 	{
-		// TODO Auto-generated constructor stub
+		typeArray = new ArrayList<String>();
 	}
 	
 	public void collectType(String type)

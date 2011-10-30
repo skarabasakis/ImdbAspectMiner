@@ -22,17 +22,20 @@
 //
 package wordnet;
 
+import indexing.PosTag;
 import indexing.PosTag.PosCategory;
 import java.io.Serializable;
+import java.text.NumberFormat;
 
 
 /**
  * TODO Description missing
  * @author Stelios Karabasakis
  */
-@SuppressWarnings("serial")
-public class Synset implements Serializable {
+public class Synset implements Serializable, Comparable<Synset> {
 	
+	private static final long	serialVersionUID	= 8604537069556588107L;
+
 	public enum SynsetCategory {
 		NONE, V, N, J, R
 	}
@@ -56,7 +59,28 @@ public class Synset implements Serializable {
 		this.offset = offset;
 	}
 	
-	private SynsetCategory convertPosCategory(PosCategory poscat)
+	public Synset(String synsetStr) throws IllegalArgumentException
+	{
+		synsetStr = synsetStr.toLowerCase().trim().replaceAll(" ", "");
+		if (Synset.matchesPattern(synsetStr)) {
+			// Extracting POS and offset from input synset descriptor string
+			String poscat_str = synsetStr.substring(0, 1);
+			String offset_str = synsetStr.substring(1);
+
+			// Processing and loading POS and offset
+			pos = convertPosCategory(PosTag.toCategory(poscat_str.toUpperCase()));
+			offset = Long.parseLong(offset_str);
+		}
+		else
+			throw new IllegalArgumentException("Invalid synset string (" + synsetStr + ")");
+	}
+	
+	public static boolean matchesPattern(String synsetstr)
+	{
+		return synsetstr.matches("[vnar][0-9]+");
+	}
+
+	public static SynsetCategory convertPosCategory(PosCategory poscat)
 	{
 		switch (poscat) {
 			case V:
@@ -74,6 +98,11 @@ public class Synset implements Serializable {
 	
 	private String getSynsetCategoryString()
 	{
+		return getSynsetCategoryString(pos);
+	}
+	
+	public static String getSynsetCategoryString(SynsetCategory pos)
+	{
 		switch (pos) {
 			case V:
 				return "v";
@@ -88,6 +117,14 @@ public class Synset implements Serializable {
 		}
 	}
 	
+	public static SynsetCategory[]	synsetCategoryValues	= { SynsetCategory.V,
+		SynsetCategory.N,
+		SynsetCategory.J,
+		SynsetCategory.R									};
+
+	public static SynsetCategory[] getSynsetCategories() {
+		return synsetCategoryValues;
+	}
 	
 	/**
 	 * @return the pos
@@ -111,6 +148,18 @@ public class Synset implements Serializable {
 		return offset != 0;
 	}
 
+	
+	private static final NumberFormat	offsetFormat	= getOffsetFormat();
+
+	private static NumberFormat getOffsetFormat()
+	{
+		NumberFormat nf = NumberFormat.getIntegerInstance();
+		nf.setMinimumIntegerDigits(8);
+		nf.setGroupingUsed(false);
+		
+		return nf;
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * @see java.lang.Object#toString()
@@ -118,7 +167,7 @@ public class Synset implements Serializable {
 	@Override
 	public String toString()
 	{
-		return getSynsetCategoryString() + Long.toString(offset, 8);
+		return getSynsetCategoryString() + offsetFormat.format(offset);
 	}
 	
 	/*
@@ -139,5 +188,15 @@ public class Synset implements Serializable {
 	public int hashCode()
 	{
 		return pos.ordinal() * MAX_OFFSET + (int)offset;
+	}
+	
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Comparable#compareTo(java.lang.Object)
+	 */
+	@Override
+	public int compareTo(Synset o)
+	{
+		return hashCode() - o.hashCode();
 	}
 }

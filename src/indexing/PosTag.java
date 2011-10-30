@@ -42,7 +42,7 @@ public final class PosTag {
 	
 	public static PosCategory toCategory(String PosTag)
 	{
-		switch (PosTag.charAt(0)) {
+		switch (PosTag.toUpperCase().charAt(0)) {
 			case 'N': /* Nouns: NN, NNS, NNP, NNPS */
 			case 'F': /* foreign word nouns: FW */
 				return PosCategory.N;
@@ -50,6 +50,7 @@ public final class PosTag {
 			case 'V': /* Verbs: VB, VBD, VBG, VBN, VBP, VBZ */
 				return PosCategory.V;
 				
+			case 'A':
 			case 'J': /* Adjectives: JJ, JJR, JJS */
 				return PosCategory.J;
 				
