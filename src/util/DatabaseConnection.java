@@ -53,7 +53,7 @@ public class DatabaseConnection {
 	private static String	port		= "3306";
 	private static String	schema		= "jmdb";
 	private static String	username	= "root";
-	private static String	password	= "sk2minamin"; // TODO Censor password
+	private static String	password	= "password"; // Enter your mysql password here
 	private Connection		c			= null;
 	private Statement		select		= null;
 	private Statement		update		= null;
